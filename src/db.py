@@ -3,16 +3,23 @@ import pandas as pd
 import sqlite3
 import os
 
-class DailyStock:
 
-    def __init__(self):
+class DB:
+
+    def __init__(self, name: str):
         # create the databases directory if it doesn't exist
         os.makedirs('databases/', exist_ok=True)
         # open a connection to the database
-        self.engine = sqlite3.connect(f'databases/daily.db')
+        self.engine = sqlite3.connect(f'databases/{name}.db')
         # set the cursor of the class
         self.cursor = self.engine.cursor()
-    
+
+
+class DailyStock(DB):
+
+    def __init__(self):
+        super().__init__('daily')
+
 
     def create_table(self, ticker: str):
         print(f"Maybe create table for ticker {ticker} ...... ", end="")
