@@ -3,6 +3,8 @@ import pandas as pd
 import sqlite3
 import os
 
+from reuters import ReutersArticle
+
 
 class DB:
 
@@ -13,6 +15,104 @@ class DB:
         self.engine = sqlite3.connect(f'databases/{name}.db')
         # set the cursor of the class
         self.cursor = self.engine.cursor()
+
+
+class FinnhubNews(DB):
+
+    def __init__(self):
+        super().__init__('finnhub')
+        print(f"Maybe create table for Finnhub news ...... ", end="")
+        stmt = f"""CREATE TABLE IF NOT EXISTS
+            articles (
+                id         TEXT PRIMARY KEY,
+                url        TEXT,
+                headline   TEXT,
+                timestamp  INT,
+                summary    TEXT,
+                category   TEXT,
+                source     TEXT
+            );
+        """
+        self.cursor.execute(stmt)
+        print('[done]')
+
+
+    def insert(self, articles: List[FinnhubNewsArticle]):
+        print(f"Inserting {len(articles)} articles ...... ", end="")
+        # ignore duplicate values
+        stmt = f"""INSERT OR IGNORE INTO articles
+            (id, url, headline, timestamp, summary, category, source)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """
+        # convert news articles to a list of tuples
+        processed = [
+            (i.id, i.url, i.headline, i.timestamp, i.summary, i.category, i.source)
+            for i in articles
+        ]
+        self.cursor.executemany(stmt, processed)
+        self.engine.commit()
+        print('[done]')
+
+
+    def articles(self) -> List[FinnhubNewsArticle]:
+        print(f"Retrieving news articles ...... ", end="")
+        self.cursor.execute(f"""
+            SELECT id, url, headline, timestamp, summary, category, source 
+            FROM articles;
+        """)
+        articles = [
+            FinnhubNewsArticle(i[0],i[1],i[2],i[3],i[4],i[5],i[6])
+            for i in self.cursor.fetchall()
+        ]
+        print('[done]')
+        return articles
+
+
+class ReutersNews(DB):
+
+    def __init__(self):
+        super().__init__('reuters')
+        print(f"Maybe create table for Reuters news ...... ", end="")
+        stmt = f"""CREATE TABLE IF NOT EXISTS
+            articles (
+                url      TEXT PRIMARY KEY,
+                title    TEXT,
+                date     TEXT,
+                summary  TEXT
+            );
+        """
+        self.cursor.execute(stmt)
+        print('[done]')
+
+
+    def insert(self, articles: List[ReutersArticle]):
+        print(f"Inserting {len(articles)} articles ...... ", end="")
+        # ignore duplicate values
+        stmt = f"""INSERT OR IGNORE INTO articles
+            (url, title, date, summary)
+            VALUES (?, ?, ?, ?)
+        """
+        processed = [
+            (e.url, e.title, e.date, e.summary)
+            for e in articles
+        ]
+        self.cursor.executemany(stmt, processed)
+        self.engine.commit()
+        print('[done]')
+
+
+    def articles(self) -> List[ReutersArticle]:
+        print(f"Retrieving news articles ...... ", end="")
+        self.cursor.execute(f"""
+            SELECT url, title, date, summary
+            FROM articles;
+        """)
+        articles = [
+            ReutersArticle(i[0], i[1], i[2], i[3])
+            for i in self.cursor.fetchall()
+        ]
+        print('[done]')
+        return articles
 
 
 class DailyStock(DB):
@@ -54,6 +154,7 @@ class DailyStock(DB):
             for i, r in data.iterrows()
         ]
         self.cursor.executemany(stmt, processed)
+        self.engine.commit()
         print('[done]')
 
 

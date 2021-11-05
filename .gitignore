@@ -422,3 +422,6 @@ TSWLatexianTemp*
 
 # Ignore .db files
 src/databases/
+
+# Ignore articles
+src/articles/
