@@ -1,8 +1,11 @@
-from typing import List
+from typing import List, Tuple
 from bs4 import BeautifulSoup
 import requests
 import re
-
+from selenium import webdriver
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.chrome.options import Options
+import time
 
 class ReutersArticle:
     def __init__(self, url: str, title: str, date: int, summary: str):
@@ -42,6 +45,47 @@ class ReutersCrawler:
 
     def __init__(self) -> None:
         pass
+
+
+    def fetch_company(self, ticker: str) -> List[Tuple[str, str, str]]:
+        ticker = ticker.upper()
+        print(f'Fetching news articles from Reuters for ticker {ticker} ...... ')
+
+        url = f"https://www.reuters.com/companies/{ticker}.O/news"
+
+        options = Options()
+        options.add_argument("--incognito")
+        options.add_argument("--window-size=1920x1080")
+        driver = webdriver.Chrome(options=options)
+        driver.get(url)
+
+        # set scroll pause time
+        SCROLL_PAUSE_TIME = 0.5
+        # get scroll height
+        last_height = driver.execute_script("return document.body.scrollHeight")
+        # keep scrolling until we've reached the bottom
+        while True:
+            # scroll down to bottom
+            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            # wait to load page
+            time.sleep(SCROLL_PAUSE_TIME)
+            # calculate new scroll height and compare with last scroll height
+            new_height = driver.execute_script("return document.body.scrollHeight")
+            if new_height == last_height:
+                break
+            last_height = new_height
+        
+        # parse loaded page
+        parsed = BeautifulSoup(driver.page_source, 'html.parser')
+        items = parsed.find_all('div', {'class': 'item'})
+        # parse news items
+        news = [
+            (i.find('a')['href'], i.find('a').text, i.find('p').text)
+            for i in items
+        ]
+
+        return news
+
 
     def fetch(self, page: int):
         def parse_url(item):

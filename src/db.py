@@ -17,6 +17,112 @@ class DB:
         self.cursor = self.engine.cursor()
 
 
+class ReutersCompanyNewsDownloaded(DB):
+
+    def __init__(self):
+        super().__init__('reuters-company-news-downloaded')
+
+
+    def create_table(self, ticker: str):
+        print(f"Maybe create table for ticker {ticker} ...... ", end="")
+
+        # create a table for each stock ticker
+        stmt = f"""CREATE TABLE IF NOT EXISTS
+            {ticker} (
+                url            TEXT PRIMARY KEY,
+                origin_url     TEXT,
+                content        TEXT
+            );
+        """
+        self.cursor.execute(stmt)
+        self.engine.commit()
+
+
+    def insert(self, ticker: str, article: Tuple[str, str, str]):
+        print(f"Inserting news {article[0]} rows for ticker {ticker} ...... ", end="")
+
+        # try to create a table for the ticker
+        self.create_table(ticker)
+        # ignore duplicate values
+        stmt = f"""INSERT OR IGNORE INTO
+            {ticker} (url, origin_url, content)
+            VALUES (?, ?, ?)
+        """
+        self.cursor.executemany(stmt, [article])
+        self.engine.commit()
+        print('[done]')
+
+
+    def downloaded_urls(self, ticker: str) -> List[str]:
+        print(f"Retrieving news for ticker {ticker} ...... ", end="")
+        self.create_table(ticker)
+        self.cursor.execute(f"SELECT url FROM {ticker};")
+        news = [i[0] for i in self.cursor.fetchall()]
+        print('[done]')
+        return news
+    
+
+    def downloaded_article(self, ticker: str, url: str) -> str:
+        print(f"Retrieving content for {url} ...... ", end="")
+        self.cursor.execute(f"""
+            SELECT url, origin_url, content
+            FROM {ticker}
+            WHERE url = '{url}';
+        """)
+        content = self.cursor.fetchall()
+        if len(content) == 0:
+            print('[NOT FOUND]')
+            return None
+        else:
+            print('[done]')
+            return content[0]
+
+
+class ReutersCompanyNews(DB):
+
+    def __init__(self):
+        super().__init__('reuters-company-news')
+
+
+    def create_table(self, ticker: str):
+        print(f"Maybe create table for ticker {ticker} ...... ", end="")
+
+        # create a table for each stock ticker
+        stmt = f"""CREATE TABLE IF NOT EXISTS
+            {ticker} (
+                url      TEXT PRIMARY KEY,
+                title    TEXT,
+                summary  TEXT
+            );
+        """
+        self.cursor.execute(stmt)
+        self.engine.commit()
+
+
+    def insert(self, ticker: str, data: List[Tuple[str, str, str]]):
+        print(f"Inserting {len(data)} rows for ticker {ticker} ...... ", end="")
+
+        # try to create a table for the ticker
+        self.create_table(ticker)
+        # ignore duplicate values
+        stmt = f"""INSERT OR IGNORE INTO
+            {ticker} (url, title, summary)
+            VALUES (?, ?, ?)
+        """
+        self.cursor.executemany(stmt, data)
+        self.engine.commit()
+        print('[done]')
+
+
+    def news(self, ticker: str) -> List[Tuple[str, str, str]]:
+        print(f"Retrieving news for ticker {ticker} ...... ", end="")
+        self.create_table(ticker)
+        self.cursor.execute(f"SELECT url, title, summary FROM {ticker};")
+        data = self.cursor.fetchall()
+        print('[done]')
+        return data
+
+
 class ReutersNews(DB):
 
     def __init__(self):
@@ -143,6 +249,7 @@ class DailyStock(DB):
             );
         """
         self.cursor.execute(stmt)
+        self.engine.commit()
 
 
     def insert(self, ticker: str, data: pd.DataFrame):
