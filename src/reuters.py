@@ -1,6 +1,7 @@
 from typing import List
 from bs4 import BeautifulSoup
 import requests
+import re
 
 
 class ReutersArticle:
@@ -12,6 +13,23 @@ class ReutersArticle:
 
     def format(self) -> str:
         return f"{self.date}\n{self.title}\n{self.url}\n{self.summary}\n"
+
+    def __str__(self) -> str:
+        return self.format()
+
+    def __repr__(self) -> str:
+        return self.format()
+
+
+class ReutersParsedArticle:
+    def __init__(self, title: str, date: str, author: int, content: str):
+        self.title = title
+        self.date = date
+        self.author = author
+        self.content = content
+
+    def format(self) -> str:
+        return f"{self.title}\n{self.date}\n{self.author}\n\n{self.content}\n"
 
     def __str__(self) -> str:
         return self.format()
@@ -61,3 +79,17 @@ class ReutersCrawler:
         ]
         print('[done]')
         return articles
+
+
+def reuters_parse(content: str):
+    parsed = BeautifulSoup(content, 'html.parser')
+    # parse title
+    title = parsed.find('h1').text
+    # parse date
+    date = ' '.join([span.text for span in parsed.find('time').find_all('span')[:2]])
+    # parse author
+    author = parsed.find('a', {'rel': 'author'}).text
+    # parse contents
+    regex = re.compile('.*ArticleBody__content__.*')
+    content = "\n".join([p.text for p in parsed.find('div', {'class': regex}).find_all('p')])
+    return ReutersParsedArticle(title, date, author, content)

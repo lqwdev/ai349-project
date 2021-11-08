@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Tuple
 import pandas as pd
 import sqlite3
 import os
@@ -22,7 +22,7 @@ class ReutersNews(DB):
     def __init__(self):
         super().__init__('reuters')
         print(f"Maybe create table for Reuters news ...... ", end="")
-        stmt = f"""CREATE TABLE IF NOT EXISTS
+        table1 = f"""CREATE TABLE IF NOT EXISTS
             articles (
                 url      TEXT PRIMARY KEY,
                 title    TEXT,
@@ -30,7 +30,16 @@ class ReutersNews(DB):
                 summary  TEXT
             );
         """
-        self.cursor.execute(stmt)
+        self.cursor.execute(table1)
+        self.engine.commit()
+        table2 = f"""CREATE TABLE IF NOT EXISTS
+            downloaded_articles (
+                url      TEXT PRIMARY KEY,
+                content  TEXT
+            );
+        """
+        self.cursor.execute(table2)
+        self.engine.commit()
         print('[done]')
 
 
@@ -62,6 +71,55 @@ class ReutersNews(DB):
         ]
         print('[done]')
         return articles
+
+
+    def insert_downloaded_article(self, url: str, content: str):
+        print(f"Inserting content for {url} ...... ", end="")
+        stmt = f"""INSERT OR IGNORE INTO downloaded_articles
+            (url, content)
+            VALUES (?, ?)
+        """
+        self.cursor.executemany(stmt, [(url, content)])
+        self.engine.commit()
+        print('[done]')
+
+
+    def downloaded_articles(self) -> List[Tuple[str, str]]:
+        print(f"Retrieving downloaded articles ...... ", end="")
+        self.cursor.execute(f"""
+            SELECT url, content
+            FROM downloaded_articles;
+        """)
+        articles = self.cursor.fetchall()
+        print('[done]')
+        return articles
+
+
+    def downloaded_article_urls(self) -> List[str]:
+        print(f"Retrieving downloaded article urls ...... ", end="")
+        self.cursor.execute(f"""
+            SELECT url
+            FROM downloaded_articles;
+        """)
+        articles_urls = [a[0] for a in self.cursor.fetchall()]
+        print('[done]')
+        return articles_urls
+
+
+    def downloaded_article(self, url: str) -> str:
+        print(f"Retrieving content for {url} ...... ", end="")
+        self.cursor.execute(f"""
+            SELECT content
+            FROM downloaded_articles
+            WHERE url = '{url}';
+        """)
+        content = [c[0] for c in self.cursor.fetchall()]
+        if len(content) == 0:
+            print('[NOT FOUND]')
+            return None
+        else:
+            print('[done]')
+            return content[0]
 
 
 class DailyStock(DB):
