@@ -17,6 +17,54 @@ class DB:
         self.cursor = self.engine.cursor()
 
 
+class ReutersStructuredCompanyNews(DB):
+
+    def __init__(self):
+        super().__init__('reuters-structured-company-news')
+
+
+    def create_table(self, ticker: str):
+        print(f"Maybe create table for ticker {ticker} ...... ", end="")
+
+        # create a table for each stock ticker
+        stmt = f"""CREATE TABLE IF NOT EXISTS
+            {ticker} (
+                url          TEXT PRIMARY KEY,
+                origin_url   TEXT,
+                date         TEXT,
+                title        TEXT,
+                summary      TEXT,
+                content      TEXT
+            );
+        """
+        self.cursor.execute(stmt)
+        self.engine.commit()
+
+
+    def insert(self, ticker: str, article: Tuple[str, str, str, str, str, str]):
+        print(f"Inserting news {article[0]} rows for ticker {ticker} ...... ", end="")
+
+        # try to create a table for the ticker
+        self.create_table(ticker)
+        # ignore duplicate values
+        stmt = f"""INSERT OR IGNORE INTO
+            {ticker} (url, origin_url, date, title, summary, content)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """
+        self.cursor.executemany(stmt, [article])
+        self.engine.commit()
+        print('[done]')
+
+
+    def article_urls(self, ticker: str) -> List[str]:
+        print(f"Retrieving news for ticker {ticker} ...... ", end="")
+        self.create_table(ticker)
+        self.cursor.execute(f"SELECT url FROM {ticker};")
+        news = [i[0] for i in self.cursor.fetchall()]
+        print('[done]')
+        return news
+
+
 class ReutersCompanyNewsDownloaded(DB):
 
     def __init__(self):
@@ -121,6 +169,19 @@ class ReutersCompanyNews(DB):
         data = self.cursor.fetchall()
         print('[done]')
         return data
+    
+
+    def summary_for_url(self, ticker: str, url: str) -> str:
+        print(f"Retrieving {url} for ticker {ticker} ...... ", end="")
+        self.create_table(ticker)
+        self.cursor.execute(f"SELECT summary FROM {ticker} WHERE url = '{url}';")
+        content = self.cursor.fetchall()
+        if len(content) == 0:
+            print('[NOT FOUND]')
+            return None
+        else:
+            print('[done]')
+            return content[0][0]
 
 
 class ReutersNews(DB):

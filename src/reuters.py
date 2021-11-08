@@ -125,15 +125,15 @@ class ReutersCrawler:
         return articles
 
 
-def reuters_parse(content: str):
-    parsed = BeautifulSoup(content, 'html.parser')
+def parse_article(contents: str):
+    parsed = BeautifulSoup(contents, 'html.parser')
     # parse title
     title = parsed.find('h1').text
     # parse date
-    date = ' '.join([span.text for span in parsed.find('time').find_all('span')[:2]])
-    # parse author
-    author = parsed.find('a', {'rel': 'author'}).text
+    date_regex = re.compile('.*ArticleHeader-date.*')
+    date = ' '.join([t.text for t in parsed.find('div', {'class': date_regex}).find_all('time')[:2]])
     # parse contents
-    regex = re.compile('.*ArticleBody__content__.*')
-    content = "\n".join([p.text for p in parsed.find('div', {'class': regex}).find_all('p')])
-    return ReutersParsedArticle(title, date, author, content)
+    wrapper = re.compile('.*ArticleBodyWrapper.*')
+    paragraph = re.compile('.*Paragraph-paragraph.*')
+    content = "\n".join([p.text for p in parsed.find('div', {'class': wrapper}).find_all('p', {'class': paragraph})])
+    return (title, date, content)
