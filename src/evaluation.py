@@ -1,6 +1,6 @@
 import pandas as pd
 
-def eval(df: pd.DataFrame, original: int = 10000) -> pd.DataFrame:
+def eval(df: pd.DataFrame, original: int = 100000) -> pd.DataFrame:
     cash, shares = original, 0
     endprice, values = None, []
     
