@@ -69,7 +69,7 @@ Date & Open & High & Low & Close & Volume \\
 \end{table}
 
 
-Since this is a time-series dataset, we will omit the descriptive statistics such as mean and standard deviation. Instead we include a plot of the price of the S\&P 500 index throughout the years in Figure \ref{sp500price}.
+Since this is a time-series dataset, we will omit the descriptive statistics such as mean and standard deviation. Instead we include a plot of the closing price of the S\&P 500 index throughout the years in Figure \ref{sp500price}.
 
 \begin{figure}[H]
 \centering
@@ -86,7 +86,7 @@ Since this is a time-series dataset, we will omit the descriptive statistics suc
 
 We constructed a simple feed-forward neural network with 2 hidden layers (256 and 512 neurons), used LeRU as the activation function, and used MSE as our loss function.
 
-Using stock data (price and volume), we built 15 features to feed into our neural network. The features are listed in Table \ref{fffeatures}.
+Using stock data (price and volume), we built 16 features to feed into our neural network. The features are listed in Table \ref{fffeatures}.
 
 \begin{table}[H]
 \centering
@@ -116,6 +116,15 @@ Number & Feature \\
 \label{fffeatures}
 \end{table}
 
+\begin{figure}[H]
+\centering
+\frame{\includegraphics[width=\textwidth]{ff}}
+\caption{Architecture diagram of our feed-forward neural network (model 1)}
+\label{ff}
+\end{figure}
+
+The architecture diagram is shown in Figure \ref{ff}.
+
 The output we would like to predict is the percentage of the stock price change 21 days in the future. We use this predicted output to construct buy / sell signals that will feed into our stock trading strategies.
 
 
@@ -125,6 +134,15 @@ The output we would like to predict is the percentage of the stock price change 
 We constructed a long short-term memory neural network (LSTM) with 2 recurrent layers and 64 features in the hidden state. We used MSE as our loss function. An LSTM neural network is a recurrent neural network (RNN) that has feedback connections which make it a good model to run on time-series data (stock prices over time).
 
 Our lookback period is 20 trading days. This means we will use the stock prices from the previous 20 days to predict the price of the next day. We tested with different lookback periods and concluded that 20 days yielded the best performance.
+
+\begin{figure}[H]
+\centering
+\frame{\includegraphics[width=\textwidth]{lstm}}
+\caption{Architecture diagram of our LSTM neural network model (model 2)}
+\label{lstm}
+\end{figure}
+
+The architecture diagram of our LSTM neural network is shown in Figure \ref{lstm}.
 
 
 
